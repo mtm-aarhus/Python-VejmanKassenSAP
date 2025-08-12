@@ -46,31 +46,6 @@ def generate_row(debitornummer):
     ]
 
 def generate_csv(debitors, output_filename):
-    header = [
-        "Debitor nr.\n(CPR, CVR ,INT)  \n",
-        "Firmakode \n(Altid)",
-        "Kontogruppe\n(CPR = kode CPR og CVR = kode SE , PNR = kode PNR , INT = kode INT , FRIT =kode FRIT)",
-        "Salgsorganisation\n(Altid )",
-        "Salgskanal\n(Altid )",
-        "Division\n(Altid )",
-        "Pnumber",
-        "Navn\n(Kommer fra P&V Data)\nUndtagen ved brug af erstatnings CPR , INT",
-        "Adresse\n(Kommer fra P&V Data)\nUndtagen ved brug af erstatnings CPR , INT",
-        "By\n(Kommer fra P&V Data)\nUndtagen ved brug af erstatnings CPR,INT",
-        "Postnummer\n(Kommer fra P&V Data)\nUndtagen ved brug af erstatnings CPR ,INT",
-        "Land\n(Altid DK )",
-        "Ean nr. \n(Udfyldes ved debitorer der skal\n modtage elektroniske fakturaer)",
-        "Afstemningskonto\n(Altid)",
-        "Kundegruppe = Z1\n(Kun ved kunder der skal\n modtage elektroniske fakturaer)",
-        "Kundeprisskema\n(Default 1)",
-        "Betalingsbetingelser",
-        "Afgiftsklassifikation\n(Altid )",
-        "Sprog ( default DA)",
-        "Valuta  (Default DKK )",
-        "Afgiftstype(Altid / default MWST)",
-        "Erst CPR"
-    ]
-
     with open(output_filename, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         #writer.writerow(header)
@@ -195,6 +170,9 @@ def run_zfi_fakturagrundlag(filepath):
         if not matched:
             invalid_rows.append(f"Række {row_number}: {message}")
 
+    #Exit current screen
+    session.findById("wnd[0]/tbar[0]/btn[12]").press()
+    session.findById("wnd[0]/tbar[0]/btn[12]").press()
 
     if invalid_rows:
         raise ValueError("❌ Uventede fejlmeddelelser:\n" + "\n".join(invalid_rows))
@@ -214,8 +192,7 @@ def create_debitors(file_path):
 
 
     # Clear current session
-    session.findById("wnd[0]/tbar[0]/btn[12]").press()
-    session.findById("wnd[0]/tbar[0]/btn[12]").press()
+
 
     # Enter transaction code
     session.findById("wnd[0]/tbar[0]/okcd").text = "ZFIE_OPRETDEB"

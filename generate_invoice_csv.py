@@ -43,7 +43,6 @@ def format_decimal(value, decimals=None):
         
 def generate_invoice_csv(orchestrator_connection: OrchestratorConnection):
     locale.setlocale(locale.LC_NUMERIC, 'da_DK')
-    any_output = False
 
     sql_server = orchestrator_connection.get_constant("SqlServer").value
     conn_string = "DRIVER={SQL Server};"+f"SERVER={sql_server};DATABASE=PYORCHESTRATOR;Trusted_Connection=yes;"
@@ -54,14 +53,22 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection):
     cursor.execute("""
         SELECT TOP (1) *
         FROM [PyOrchestrator].[dbo].[VejmanFakturering]
-        WHERE (Faktureret != 1 OR Faktureret IS NULL)
+        WHERE (Faktureret != 1 OR Faktureret IS NULL) AND (TilFakturering != 1 OR TilFakturering IS NULL)
             AND SendTilFakturering = 1
     """)
     row = cursor.fetchone()
 
     if row:
+        
         tilladelsestype = row.TilladelsesType
         # Fetch the matching fakturatekster row
+        cursor.execute("""
+            UPDATE [PyOrchestrator].[dbo].[VejmanFakturering]
+            SET SendTilFakturering = 0,
+                TilFakturering = 1
+            WHERE ID = ?
+        """, row.ID)
+
         cursor.execute("""
             SELECT TOP (1) *
             FROM [dbo].[VejmanFakturaTekster]
