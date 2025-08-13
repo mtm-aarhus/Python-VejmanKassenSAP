@@ -123,7 +123,61 @@ def run_zfi_fakturagrundlag(filepath):
 
     print(f"📋 Current Text: '{combined}'")
     if "Input filen er fejlfri - klar til opdatering.".strip().lower() in combined.lower():
-        print("✅ Match found!")
+        print("Fejlfri indlæsning")
+        session.findById("wnd[0]/tbar[0]/btn[12]").press()
+        opret_radio = wait_for_element(session, "wnd[0]/usr/radP_OPDAT")
+        opret_radio.select()  # more semantic than .setFocus + VKey
+        execute_button = wait_for_element(session, "wnd[0]/tbar[1]/btn[8]")
+        execute_button.press()
+        container = session.findById("/app/con[0]/ses[0]/wnd[0]/usr")
+
+        # Collect all label texts in order
+        texts = []
+        for child in container.Children:
+            if "lbl" in child.Id:  # SAP GUI labels usually have 'lbl' in their Id
+                try:
+                    texts.append((child.Id, (child.Text or "").strip()))
+                except Exception:
+                    continue
+
+        # Convenience: just the text values
+        labels = [t for _, t in texts]
+        print("🔍 All label texts combined:\n" + " | ".join(labels))
+
+        # Find the split point
+        try:
+            split_idx = labels.index("Række Fejltekst")
+        except ValueError:
+            raise RuntimeError("Kunne ikke finde 'Række Fejltekst' i labels; kan ikke validere.")
+
+        after = labels[split_idx + 1 :]
+
+        # Pattern: "KMD Standardordre <digits> gemt"
+        pat = re.compile(r"^KMD\s+Standardordre\s+(\d+)\s+gemt$", re.IGNORECASE)
+
+        standardordre_ids = []
+        bad_entries = []
+
+        for text in after:
+            if text == "":  # empty is allowed, skip it
+                continue
+            m = pat.match(text)
+            if m:
+                standardordre_ids.append(m.group(1))
+            else:
+                bad_entries.append(text)
+
+        # If any non-empty entry didn't match, that's an error
+        if bad_entries:
+            raise RuntimeError(
+                "Uventet tekst efter 'Række Fejltekst' (skal være 'KMD Standardordre <xyz> gemt' eller tom). "
+                f"Fandt i stedet: {bad_entries}"
+            )
+
+        # At this point, everything non-empty was valid and we've captured all xyz values
+        print(f"✅ Valideret. Fangede {len(standardordre_ids)} Standardordre-id(s): {standardordre_ids}")
+
+        print("DONE")
         return True, None
 
     items = [p.strip() for p in combined.split('|') if p.strip()]

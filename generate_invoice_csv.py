@@ -41,13 +41,8 @@ def format_decimal(value, decimals=None):
     
 
         
-def generate_invoice_csv(orchestrator_connection: OrchestratorConnection):
+def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: pyodbc.Connection, cursor: pyodbc.Cursor):
     locale.setlocale(locale.LC_NUMERIC, 'da_DK')
-
-    sql_server = orchestrator_connection.get_constant("SqlServer").value
-    conn_string = "DRIVER={SQL Server};"+f"SERVER={sql_server};DATABASE=PYORCHESTRATOR;Trusted_Connection=yes;"
-    conn = pyodbc.connect(conn_string)
-    cursor = conn.cursor()
 
     # Fetch one fakturering row that should be invoiced
     cursor.execute("""
@@ -68,6 +63,7 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection):
                 TilFakturering = 1
             WHERE ID = ?
         """, row.ID)
+        conn.commit()
 
         cursor.execute("""
             SELECT TOP (1) *
