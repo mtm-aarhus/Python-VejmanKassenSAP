@@ -19,7 +19,7 @@ for child in container.Children:
 
 # Convenience: just the text values
 labels = [t for _, t in texts]
-print("🔍 All label texts combined:\n" + " | ".join(labels))
+print("All label texts combined:\n" + " | ".join(labels))
 
 # Find the split point
 try:
@@ -52,4 +52,4 @@ if bad_entries:
     )
 
 # At this point, everything non-empty was valid and we've captured all xyz values
-print(f"✅ Valideret. Fangede {len(standardordre_ids)} Standardordre-id(s): {standardordre_ids}")
+print(f"Valideret. Fangede {len(standardordre_ids)} Standardordre-id(s): {standardordre_ids}")

@@ -48,7 +48,7 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
     cursor.execute("""
         SELECT TOP (1) *
         FROM [PyOrchestrator].[dbo].[VejmanFakturering]
-        WHERE (Faktureret != 1 OR Faktureret IS NULL) AND (TilFakturering != 1 OR TilFakturering IS NULL)
+        WHERE (Faktureret != 1 OR Faktureret IS NULL) AND (TilFakturering != 1 OR TilFakturering IS NULL) AND (FakturerIkke != 1 OR FakturerIkke IS NULL)
             AND SendTilFakturering = 1
     """)
     row = cursor.fetchone()
@@ -60,6 +60,7 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         cursor.execute("""
             UPDATE [PyOrchestrator].[dbo].[VejmanFakturering]
             SET SendTilFakturering = 0,
+                FakturerIkke = 1,
                 TilFakturering = 1
             WHERE ID = ?
         """, row.ID)
@@ -79,107 +80,100 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         # kunde_ref_id = fakturarow.KundRefId
         top_text = fakturarow.Toptekst
         forklaring = fakturarow.Forklaring
+
+        # Assign variables directly using column names
+        ID = row.ID
+        VejmanID = row.VejmanID
+        FørsteSted = row.FørsteSted
+        Tilladelsesnr = row.Tilladelsesnr
+        Ansøger = row.Ansøger
+        CvrNr = row.CvrNr
+        TilladelsesType = row.TilladelsesType
+        Enhedspris = row.Enhedspris
+        Meter = row.Meter
+        Startdato = (datetime.strptime(row.Startdato, '%Y-%m-%d')if row.Startdato else None)
+        Slutdato = (datetime.strptime(row.Slutdato, '%Y-%m-%d') if row.Slutdato else None)
+        AntalDage = row.AntalDage
+        TotalPris = row.TotalPris
+        Faktureret = row.Faktureret
+        SendTilFakturering = row.SendTilFakturering
+        FakturaNr = row.FakturaNr
+        FakturerIkke = row.FakturerIkke
+        kunde_ref_id = row.ATT
+        print(ID, VejmanID)  # Example access
+
+        # Ensure specific columns have the correct types
+        Enhedspris = float(Enhedspris) if Enhedspris is not None else None
+        Meter = float(Meter) if Meter is not None else None
+        TotalPris = float(TotalPris) if TotalPris is not None else None
+        AntalDage = int(AntalDage) if AntalDage is not None else None
         
-        query = """SELECT TOP (1) * FROM [PyOrchestrator].[dbo].[VejmanFakturering] WHERE TilladelsesType = ? AND (Faktureret != 1 OR FAKTURERET IS NULL) AND SendTilFakturering = 1 """
-        cursor.execute(query, (Fakturalinje,))
-
-        faktura_db = cursor.fetchall()
-
-
-        for row in faktura_db:
-            # Assign variables directly using column names
-            ID = row.ID
-            VejmanID = row.VejmanID
-            FørsteSted = row.FørsteSted
-            Tilladelsesnr = row.Tilladelsesnr
-            Ansøger = row.Ansøger
-            CvrNr = row.CvrNr
-            TilladelsesType = row.TilladelsesType
-            Enhedspris = row.Enhedspris
-            Meter = row.Meter
-            Startdato = (datetime.strptime(row.Startdato, '%Y-%m-%d')if row.Startdato else None)
-            Slutdato = (datetime.strptime(row.Slutdato, '%Y-%m-%d') if row.Slutdato else None)
-            AntalDage = row.AntalDage
-            TotalPris = row.TotalPris
-            Faktureret = row.Faktureret
-            SendTilFakturering = row.SendTilFakturering
-            FakturaNr = row.FakturaNr
-            FakturerIkke = row.FakturerIkke
-            kunde_ref_id = row.ATT
-            print(ID, VejmanID)  # Example access
-
-            # Ensure specific columns have the correct types
-            Enhedspris = float(Enhedspris) if Enhedspris is not None else None
-            Meter = float(Meter) if Meter is not None else None
-            TotalPris = float(TotalPris) if TotalPris is not None else None
-            AntalDage = int(AntalDage) if AntalDage is not None else None
-            
-            
-            def format_decimal(value, decimals=None):
-                if isinstance(value, int):
+        
+        def format_decimal(value, decimals=None):
+            if isinstance(value, int):
+                if decimals is None:
+                    # Format the integer without decimal places
+                    return str(locale.format_string("%d", value, grouping=False))
+                else:
+                    # Force formatting with the specified number of decimals
+                    return str(locale.format_string(f"%.{decimals}f", value, grouping=False))
+            elif isinstance(value, float):
+                # Check if the value is a whole number and decimals is None (e.g., 19.0 should be formatted as 19)
+                if value.is_integer() and decimals is None:
+                    return str(locale.format_string("%d", int(value), grouping=False))
+                else:
+                    # Format the float with the specified number of decimal places
                     if decimals is None:
-                        # Format the integer without decimal places
-                        return str(locale.format_string("%d", value, grouping=False))
+                        return str(locale.format_string("%.2f", value, grouping=False))
                     else:
                         # Force formatting with the specified number of decimals
                         return str(locale.format_string(f"%.{decimals}f", value, grouping=False))
-                elif isinstance(value, float):
-                    # Check if the value is a whole number and decimals is None (e.g., 19.0 should be formatted as 19)
-                    if value.is_integer() and decimals is None:
-                        return str(locale.format_string("%d", int(value), grouping=False))
-                    else:
-                        # Format the float with the specified number of decimal places
-                        if decimals is None:
-                            return str(locale.format_string("%.2f", value, grouping=False))
-                        else:
-                            # Force formatting with the specified number of decimals
-                            return str(locale.format_string(f"%.{decimals}f", value, grouping=False))
-                else:
-                    # If it's not a number, return the original value
-                    return str(value)
+            else:
+                # If it's not a number, return the original value
+                return str(value)
 
-            
-            formatted_cvr_number = f'{int(CvrNr):010}'
-            
-            
-            today = datetime.now().strftime('%d-%m-%Y')
-            future_date = (datetime.now() + timedelta(days=30)).strftime('%d-%m-%Y')        
-            short_start_date = Startdato.strftime('%d-%m-%Y')
-            short_end_date = Slutdato.strftime('%d-%m-%Y')
-            
-            # Format numbers inside the f-string expressions
-            opus_price = format_decimal(round(Meter*Enhedspris,2),2)
-            unit_price = format_decimal(Enhedspris)
-            length = format_decimal(Meter)
-            days_period_formatted = format_decimal(AntalDage,3)
-            total_calculated_price = format_decimal(TotalPris)
-                # Use eval to evaluate them as f-strings
-            top_text_evaluated = eval(top_text)
-            forklaring_evaluated = eval(forklaring)
-            
-            # Prepare rows for writing
-            row_H = [
-                'H', formatted_cvr_number, '', today, today, '0020', '20', '20', 'ZRA', Tilladelsesnr, '', 
-                '', '', '', kunde_ref_id, 
-                top_text_evaluated,
-                '', '', '', '', '', '', '', short_start_date, short_start_date, short_end_date, '', '', short_start_date, short_end_date, '', fordringstype, '', '', short_start_date, future_date
-            ]
-            
-            row_L = [
-                'L', formatted_material_number, Fakturalinje, days_period_formatted, opus_price, 'NEJ', psp_element, '', '', '', 
-                '', forklaring_evaluated,
-                '', '', '', '', '', '', '', '', '','', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
-            ]
-            
-            csvname = f"{datetime.now().strftime('%Y-%m-%d')}_Fakturaer_{ID}.csv"
-            full_path = os.path.abspath(csvname)  # get absolute path in current working dir
+        
+        formatted_cvr_number = f'{int(CvrNr):010}'
+        
+        
+        today = datetime.now().strftime('%d-%m-%Y')
+        future_date = (datetime.now() + timedelta(days=30)).strftime('%d-%m-%Y')        
+        short_start_date = Startdato.strftime('%d-%m-%Y')
+        short_end_date = Slutdato.strftime('%d-%m-%Y')
+        
+        # Format numbers inside the f-string expressions
+        opus_price = format_decimal(round(Meter*Enhedspris,2),2)
+        unit_price = format_decimal(Enhedspris)
+        length = format_decimal(Meter)
+        days_period_formatted = format_decimal(AntalDage,3)
+        total_calculated_price = format_decimal(TotalPris)
+            # Use eval to evaluate them as f-strings
+        top_text_evaluated = eval(top_text)
+        forklaring_evaluated = eval(forklaring)
+        
+        # Prepare rows for writing
+        row_H = [
+            'H', formatted_cvr_number, '', today, today, '0020', '20', '20', 'ZRA', Tilladelsesnr, '', 
+            '', '', '', kunde_ref_id, 
+            top_text_evaluated,
+            '', '', '', '', '', '', '', short_start_date, short_start_date, short_end_date, '', '', short_start_date, short_end_date, '', fordringstype, '', '', short_start_date, future_date
+        ]
+        
+        row_L = [
+            'L', formatted_material_number, Fakturalinje, days_period_formatted, opus_price, 'NEJ', psp_element, '', '', '', 
+            '', forklaring_evaluated,
+            '', '', '', '', '', '', '', '', '','', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+        ]
+        
+        csvname = f"{datetime.now().strftime('%Y-%m-%d')}_Fakturaer_{ID}.csv"
+        full_path = os.path.abspath(csvname)  # get absolute path in current working dir
 
-            
-            # Write to the CSV
-            with open(full_path, mode='a', newline='', encoding='windows-1252') as file:
-                writer = csv.writer(file, delimiter=';')
-                writer.writerow(row_H)
-                writer.writerow(row_L)
-            return True, full_path, ID
+        
+        # Write to the CSV
+        with open(full_path, mode='a', newline='', encoding='windows-1252') as file:
+            writer = csv.writer(file, delimiter=';')
+            writer.writerow(row_H)
+            writer.writerow(row_L)
+        return True, full_path, ID, VejmanID
 
-    return False, "nothing", "nothing"
+    return False, None, None, None

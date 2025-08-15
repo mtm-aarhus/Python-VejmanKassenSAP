@@ -1,5 +1,6 @@
 import re
 import win32com.client
+from collections import defaultdict, OrderedDict
 
 SapGuiAuto = win32com.client.GetObject("SAPGUI")
 application = SapGuiAuto.GetScriptingEngine
@@ -77,7 +78,7 @@ if fejl_col is None:
     raise RuntimeError("Kolonnen 'Fejl' blev ikke fundet i header-rækken.")
 
 # 5) Group data by row index and map to {header: value}
-from collections import defaultdict, OrderedDict
+
 
 rows_by_index = defaultdict(dict)
 for col, row, text in data_cells:
@@ -108,7 +109,7 @@ if bad_fejl:
     )
 
 # 7) All good — we have a clean table and Fejl is empty everywhere
-print("✅ Tabel verificeret (kun grid-labels, korrekt header/data-rækker).")
+print("Tabel verificeret (kun grid-labels, korrekt header/data-rækker).")
 print(f"Kolonner: {column_names}")
 print(f"Antal rækker: {len(table_rows)}")
 # Access example: print each row

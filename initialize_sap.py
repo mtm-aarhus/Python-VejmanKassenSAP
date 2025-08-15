@@ -39,12 +39,7 @@ def initialize_sap(orchestrator_connection: OrchestratorConnection):
     # Opus bruger
     OpusLogin = orchestrator_connection.get_credential("OpusRobotBruger")
     OpusUser = OpusLogin.username
-    OpusPassword = OpusLogin.password 
-
-    # Robotpassword
-    RobotCredential = orchestrator_connection.get_credential("Robot365User") 
-    RobotUsername = RobotCredential.username
-    RobotPassword = RobotCredential.password
+    OpusPassword = OpusLogin.password
     
     downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
     
