@@ -40,7 +40,7 @@ def send_invoice(orchestrator_connection: OrchestratorConnection):
     session = connection.Children(0)
 
     # --- Get robot username from Orchestrator (you already have this available) ---
-    RobotCredential = orchestrator_connection.get_credential("OpusRobotBruger")
+    RobotCredential = orchestrator_connection.get_credential("OpusBruger")
     RobotUsername = RobotCredential.username
 
     # --- Go to ZVF04 ---

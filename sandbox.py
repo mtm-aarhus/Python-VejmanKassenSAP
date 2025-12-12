@@ -7,7 +7,9 @@ from create_invoices import run_zfi_fakturagrundlag, generate_csv, create_debito
 from generate_invoice_csv import generate_invoice_csv
 from send_invoices import send_invoice
 from update_vejman import update_case
+from datetime import datetime
 
+#HUSK AT INSTALLERE PIP-SYSTEM-CERTS
 orchestrator_connection = OrchestratorConnection("VejmanKassenSAP", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None)
 sql_server = orchestrator_connection.get_constant("SqlServer").value
 conn_string = "DRIVER={SQL Server};"+f"SERVER={sql_server};DATABASE=PYORCHESTRATOR;Trusted_Connection=yes;"
@@ -27,12 +29,12 @@ while True:
     if not rowexists:
         break
     
-
     if rowexists:
         success, debitorsororder = run_zfi_fakturagrundlag(fakturafil)
         # Output file name based on date
         if not success:
-            filename = f"{id}_Debitorer_CSV.csv"
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # remove last 3 digits → milliseconds
+            filename = f"{id}_Debitorer_CSV_{timestamp}.csv"
             debitor_csv = generate_csv(debitorsororder, filename)
             create_debitors(debitor_csv)
             #os.remove(debitor_csv)

@@ -37,7 +37,7 @@ def download_sap(driver: webdriver.Chrome, downloads_folder, orchestrator_connec
     
 def initialize_sap(orchestrator_connection: OrchestratorConnection):
     # Opus bruger
-    OpusLogin = orchestrator_connection.get_credential("OpusRobotBruger")
+    OpusLogin = orchestrator_connection.get_credential("OpusBruger")
     OpusUser = OpusLogin.username
     OpusPassword = OpusLogin.password
     

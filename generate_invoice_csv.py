@@ -164,8 +164,9 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
             '', forklaring_evaluated,
             '', '', '', '', '', '', '', '', '','', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
         ]
-        
-        csvname = f"{datetime.now().strftime('%Y-%m-%d')}_Fakturaer_{ID}.csv"
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]  # milliseconds
+        csvname = f"{timestamp}_Fakturaer_{ID}.csv"
+
         full_path = os.path.abspath(csvname)  # get absolute path in current working dir
 
         
