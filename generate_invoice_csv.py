@@ -47,9 +47,8 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
     # Fetch one fakturering row that should be invoiced
     cursor.execute("""
         SELECT TOP (1) *
-        FROM [PyOrchestrator].[dbo].[VejmanFakturering]
-        WHERE (Faktureret != 1 OR Faktureret IS NULL) AND (TilFakturering != 1 OR TilFakturering IS NULL) AND (FakturerIkke != 1 OR FakturerIkke IS NULL)
-            AND SendTilFakturering = 1
+        FROM [VejmanKassen].[dbo].[VejmanFakturering]
+        WHERE FakturaStatus = 'Afsendt'
     """)
     row = cursor.fetchone()
 
@@ -58,10 +57,8 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         tilladelsestype = row.TilladelsesType
         # Fetch the matching fakturatekster row
         cursor.execute("""
-            UPDATE [PyOrchestrator].[dbo].[VejmanFakturering]
-            SET SendTilFakturering = 0,
-                FakturerIkke = 1,
-                TilFakturering = 1
+            UPDATE [VejmanKassen].[dbo].[VejmanFakturering]
+            SET FakturaStatus = 'TilFakturering'
             WHERE ID = ?
         """, row.ID)
         conn.commit()
@@ -77,7 +74,6 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         psp_element = fakturarow.PSPElement
         materiale_nr_opus = fakturarow.MaterialeNrOpus
         formatted_material_number = f'{int(materiale_nr_opus):018}'
-        # kunde_ref_id = fakturarow.KundRefId
         top_text = fakturarow.Toptekst
         forklaring = fakturarow.Forklaring
 
@@ -88,19 +84,13 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         Tilladelsesnr = row.Tilladelsesnr
         Ansøger = row.Ansøger
         CvrNr = row.CvrNr
-        TilladelsesType = row.TilladelsesType
         Enhedspris = row.Enhedspris
         Meter = row.Meter
         Startdato = (datetime.strptime(row.Startdato, '%Y-%m-%d')if row.Startdato else None)
         Slutdato = (datetime.strptime(row.Slutdato, '%Y-%m-%d') if row.Slutdato else None)
         AntalDage = row.AntalDage
         TotalPris = row.TotalPris
-        Faktureret = row.Faktureret
-        SendTilFakturering = row.SendTilFakturering
-        FakturaNr = row.FakturaNr
-        FakturerIkke = row.FakturerIkke
         kunde_ref_id = row.ATT
-        print(ID, VejmanID)  # Example access
 
         # Ensure specific columns have the correct types
         Enhedspris = float(Enhedspris) if Enhedspris is not None else None

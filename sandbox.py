@@ -12,7 +12,7 @@ from datetime import datetime
 #HUSK AT INSTALLERE PIP-SYSTEM-CERTS
 orchestrator_connection = OrchestratorConnection("VejmanKassenSAP", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None)
 sql_server = orchestrator_connection.get_constant("SqlServer").value
-conn_string = "DRIVER={SQL Server};"+f"SERVER={sql_server};DATABASE=PYORCHESTRATOR;Trusted_Connection=yes;"
+conn_string = "DRIVER={SQL Server};"+f"SERVER={sql_server};DATABASE=VejmanKassen;Trusted_Connection=yes;"
 conn = pyodbc.connect(conn_string)
 cursor = conn.cursor()
 
@@ -50,17 +50,15 @@ while True:
         
         send_invoice(orchestrator_connection)
         cursor.execute("""
-            UPDATE [PyOrchestrator].[dbo].[VejmanFakturering]
-            SET SendTilFakturering = 0,
-                TilFakturering     = 0,
-                FakturerIkke       = 0,
-                Faktureret         = 1,
+            UPDATE [VejmanKassen].[dbo].[VejmanFakturering]
+            SET FakturaStatus = 'Faktureret',
                 FakturaDato        = CAST(GETDATE() AS date),
                 Ordrenummer        = ?
             WHERE ID = ?
         """, ordernumber, id)
         conn.commit()
-        update_case(vejmanid, vejmantoken)
+        if vejmanid:
+            update_case(vejmanid, vejmantoken)
         #os.remove(fakturafil)
     else:
         break
