@@ -24,6 +24,8 @@ if not sap_running:
 
 while True:
     rowexists, fakturafil, id, vejmanid = generate_invoice_csv(orchestrator_connection, conn, cursor)
+    if not vejmanid:
+         print("Henstilling, check op på indlæsningsfil")
     ordernumber = None
     
     if not rowexists:

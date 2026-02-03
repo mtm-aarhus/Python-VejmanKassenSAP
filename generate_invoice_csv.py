@@ -76,6 +76,10 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         formatted_material_number = f'{int(materiale_nr_opus):018}'
         top_text = fakturarow.Toptekst
         forklaring = fakturarow.Forklaring
+        SAP_NOTE = (
+            "Bemærk: Forfaldsdatoen angiver periodens start og er ikke betalingsfristen. Betalingsfristen fremgår øverst på fakturaen."
+        )
+
 
         # Assign variables directly using column names
         ID = row.ID
@@ -140,6 +144,7 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
             # Use eval to evaluate them as f-strings
         top_text_evaluated = eval(top_text)
         forklaring_evaluated = eval(forklaring)
+
         
         # Prepare rows for writing
         row_H = [
@@ -151,8 +156,8 @@ def generate_invoice_csv(orchestrator_connection: OrchestratorConnection, conn: 
         
         row_L = [
             'L', formatted_material_number, Fakturalinje, days_period_formatted, opus_price, 'NEJ', psp_element, '', '', '', 
-            '', forklaring_evaluated,
-            '', '', '', '', '', '', '', '', '','', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+            '', SAP_NOTE, forklaring_evaluated,
+            '', '', '', '', '', '', '', '', '','', '', '', '', '', '', '', '', '', '', '', '', '', ''
         ]
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]  # milliseconds
         csvname = f"{timestamp}_Fakturaer_{ID}.csv"
